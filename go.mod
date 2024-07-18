@@ -1,4 +1,4 @@
-module core
+module github.com/blocktransaction/core
 
 go 1.22.2
 
