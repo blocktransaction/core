@@ -162,7 +162,7 @@ func ParseAddress(srcAddress string) string {
 	if startIndex > 0 && endIndex > 0 {
 		return srcAddress[startIndex+1 : endIndex]
 	}
-	return ""
+	return "" 
 }
 
 // 给地址加*

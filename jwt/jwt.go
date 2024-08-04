@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/blocktransaction/core/crypto/aes"
+	"github.com/blocktransaction/core/xtime"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -15,53 +16,60 @@ type myCustomClaims struct {
 }
 
 type Jwt struct {
-	AesSecret    string
-	JwtSecret    string
-	JwtExpiresAt int64
-	Issuer       string
+	aesSecret    string
+	jwtSecret    string
+	jwtExpiresAt time.Duration
+	issuer       string
+	expiresAt    float64
 }
 
 // new jwt
-func NewJwt(aesSecret, jwtSecret, issuer string, jwtExpiresAt int64) *Jwt {
+func NewJwt(aesSecret, jwtSecret, issuer string, jwtExpiresAt time.Duration) *Jwt {
 	return &Jwt{
-		AesSecret:    aesSecret,
-		JwtSecret:    jwtSecret,
-		JwtExpiresAt: jwtExpiresAt,
-		Issuer:       issuer,
+		aesSecret:    aesSecret,
+		jwtSecret:    jwtSecret,
+		jwtExpiresAt: jwtExpiresAt,
+		issuer:       issuer,
 	}
 }
 
 // 生成jwt
-func (j *Jwt) GenerateJwt(userId, mobile string) (string, error) {
-	if userId == "" {
-		return "", errors.New("userid empty")
+func (j *Jwt) GenerateJwt(content string) (string, error) {
+	if content == "" {
+		return "", errors.New("content is empty")
 	}
 
 	claims := myCustomClaims{
-		aes.AesEncrypt(userId+"|"+mobile, j.AesSecret),
+		aes.AesEncrypt(content, j.aesSecret),
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(j.JwtExpiresAt) * time.Hour)),
-			Issuer:    j.Issuer,
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.jwtExpiresAt)),
+			Issuer:    j.issuer,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(j.JwtSecret))
+	return token.SignedString([]byte(j.jwtSecret))
 }
 
-// 解析jwt
-func (j *Jwt) ParseJwt(tokenString string) (string, float64, error) {
+// 解析jwT
+func (j *Jwt) ParseJwt(tokenString string) (string, error) {
 	if tokenString == "" {
-		return "", 0.0, errors.New("token is empty")
+		return "", errors.New("token is empty")
 	}
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok && token.Valid {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(j.JwtSecret), nil
+		return []byte(j.jwtSecret), nil
 	})
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return aes.AesDecrypt(claims["userId"].(string), j.AesSecret), claims["exp"].(float64), nil
+		j.expiresAt = claims["exp"].(float64)
+		return aes.AesDecrypt(claims["userId"].(string), j.aesSecret), nil
 	}
-	return "", 0.0, err
+	return "", err
+}
+
+// 验证jwt是否过期
+func (j *Jwt) Valid() bool {
+	return xtime.Second() < int64(j.expiresAt)
 }
