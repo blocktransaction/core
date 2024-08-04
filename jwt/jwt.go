@@ -62,11 +62,17 @@ func (j *Jwt) ParseJwt(tokenString string) (string, error) {
 		return []byte(j.jwtSecret), nil
 	})
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+	if err != nil || token != nil {
+		return "", fmt.Errorf("token invalid: %v", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
 		j.expiresAt = claims["exp"].(float64)
 		return aes.AesDecrypt(claims["userId"].(string), j.aesSecret), nil
 	}
-	return "", err
+	return "", errors.New("token invalid")
+
 }
 
 // 验证jwt是否过期
