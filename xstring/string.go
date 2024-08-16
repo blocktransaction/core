@@ -35,9 +35,11 @@ var (
 		9:  "*",
 	}
 
-	pwdRegx                 = `^(?=(?:.*\d.*\D|.*\D.*\d|.*[a-zA-Z].*[^\w\s]|.*[^\w\s].*[a-zA-Z]|.*[^\w\s].*\d|.*\d.*[^\w\s])).{8,}$`
-	chinaPhoneRegex         = `^(?:(?:\+|00)86)?1(?:3\d{3}|4[5-9]\d{2}|5[0-35-9]\d{2}|6[2567]\d{2}|7[0-8]\d{2}|8[0-9]\d{2}|9[189]\d{2})\d{6}$`
-	internationalPhoneRegex = `^(?:\+?)(?:[0-9]\d{1,3})?[ -]?\(?(?:\d{1,4})?\)?[ -]?\d{1,14}$`
+	pwdRegx                = `^(?=(?:.*\d.*\D|.*\D.*\d|.*[a-zA-Z].*[^\w\s]|.*[^\w\s].*[a-zA-Z]|.*[^\w\s].*\d|.*\d.*[^\w\s])).{8,}$`
+	chinaPhoneRegx         = `^(?:(?:\+|00)86)?1(?:3\d{3}|4[5-9]\d{2}|5[0-35-9]\d{2}|6[2567]\d{2}|7[0-8]\d{2}|8[0-9]\d{2}|9[189]\d{2})\d{6}$`
+	internationalPhoneRegx = `^(?:\+?)(?:[0-9]\d{1,3})?[ -]?\(?(?:\d{1,4})?\)?[ -]?\d{1,14}$`
+	emailRegx              = "^(((([a-zA-Z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])+(\\.([a-zA-Z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])+)*)|((\\x22)((((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(([\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])|(\\([\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}]))))*(((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(\\x22)))@((([a-zA-Z]|\\d|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])|(([a-zA-Z]|\\d|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])([a-zA-Z]|\\d|-|\\.|_|~|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])*([a-zA-Z]|\\d|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])))\\.)+(([a-zA-Z]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])|(([a-zA-Z]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])([a-zA-Z]|\\d|-|_|~|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])*([a-zA-Z]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])))\\.?$"
+	dataURIRegx            = "^data:.+\\/(.+);base64$"
 )
 
 // 密码检测
@@ -48,17 +50,33 @@ func MustCompilePwd(password string) bool {
 	return m != nil
 }
 
+// 邮箱检测
+func MustCompileEmail(email string) bool {
+	reg, _ := regexp2.Compile(emailRegx, 0)
+
+	m, _ := reg.FindStringMatch(email)
+	return m != nil
+}
+
+// dataURI格式检测
+func MustCompileDataURI(dataURI string) bool {
+	reg, _ := regexp2.Compile(dataURIRegx, 0)
+
+	m, _ := reg.FindStringMatch(dataURI)
+	return m != nil
+}
+
 // 手机号检测
-func MustCompilePhone(areaCode, password string) bool {
+func MustCompilePhone(areaCode, mobilNumber string) bool {
 	//国内
 	if strings.HasPrefix(areaCode, "86") || strings.HasSuffix(areaCode, "86") {
-		reg, _ := regexp2.Compile(chinaPhoneRegex, 0)
-		m, _ := reg.FindStringMatch(areaCode + password)
+		reg, _ := regexp2.Compile(chinaPhoneRegx, 0)
+		m, _ := reg.FindStringMatch(areaCode + mobilNumber)
 		return m != nil
 	}
 	//国际
-	reg, _ := regexp2.Compile(internationalPhoneRegex, 0)
-	m, _ := reg.FindStringMatch(areaCode + password)
+	reg, _ := regexp2.Compile(internationalPhoneRegx, 0)
+	m, _ := reg.FindStringMatch(areaCode + mobilNumber)
 	return m != nil
 }
 
@@ -162,7 +180,7 @@ func ParseAddress(srcAddress string) string {
 	if startIndex > 0 && endIndex > 0 {
 		return srcAddress[startIndex+1 : endIndex]
 	}
-	return "" 
+	return ""
 }
 
 // 给地址加*
