@@ -100,6 +100,21 @@ func SearchStrings(s string, array []string) bool {
 	return false
 }
 
+// 6位数字验证
+func IsValid6DigitNumber(s string) bool {
+	if !regexp.MustCompile(`^\d{6}$`).MatchString(s) {
+		return false
+	}
+
+	for i := 1; i < len(s); i++ {
+		if s[i] == s[i-1]+1 || s[i] == s[i-1]-1 {
+			return false
+		}
+	}
+
+	return true
+}
+
 // 随机字符串
 // n长度
 func RandString(n int) string {
@@ -177,7 +192,7 @@ func Substr(str string, start int, end int) string {
 func ParseAddress(srcAddress string) string {
 	startIndex := strings.Index(srcAddress, ":")
 	endIndex := strings.Index(srcAddress, "?")
-	if startIndex > 0 && endIndex > 0 {
+	if endIndex > startIndex && startIndex > 0 {
 		return srcAddress[startIndex+1 : endIndex]
 	}
 	return ""

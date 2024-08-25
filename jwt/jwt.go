@@ -62,7 +62,7 @@ func (j *Jwt) ParseJwt(tokenString string) (string, error) {
 		return []byte(j.jwtSecret), nil
 	})
 
-	if err != nil || token != nil {
+	if err != nil || token == nil {
 		return "", fmt.Errorf("token invalid: %v", err)
 	}
 
